@@ -74,6 +74,9 @@ class liner_reg:
         ty = self.__learn_Y[0 : self.__learn_m]
         self.__the = np.dot(np.dot(np.linalg.inv(np.dot(np.transpose(tx), tx)), np.transpose(tx)), ty)
         return self.__the
+    
+    def predict(self, tx):
+        print (np.dot(tx, self.__the))
 
 liner = liner_reg(1)
 

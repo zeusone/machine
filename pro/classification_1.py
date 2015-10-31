@@ -2,62 +2,105 @@ import math
 import numpy as np
 
 #由于没有找到简单的分类算法数据集,只能直接干写算法了,这种分类方法只适合0，1分类
-a = 0.0005     #set rate of down
 
-p = np.zeros(2, 1)
-pnew = np.zeros(2, 1)
+class classification:
+    __ma = 500
+    __a = 0.005#梯度下降速率
+    __learn_Y = np.zeros((__ma, 1))   #训练用Y矩阵
+    __right_Y = np.zeros((__ma, 1))  #预测用Y对应的真值
+    __pre_Y = np.zeros((__ma, 1))     #预测用Y矩阵,存储预测结果
 
-list_d = np.zeros(300, 3) #程序中假设数据只有两个参数一个结果列,可以根据自己的数据调整
+    def __init__(self, n):
+        self.__n = n
+        self.__learn_m = 0
+        self.__learn_X = np.zeros((self.__ma, self.__n + 1))
+        self.__pre_X = np.zeros((self.__ma, self.__n + 1))
+        self.__the = np.zeros((self.__n + 1, 1))
+        self.__the_new = np.zeros((self.__n + 1, 1))
+        self.__ti = 0
+        self.__d1 = np.zeros((self.__n + 1, 1))
+        self.__d2 = np.zeros((self.__n + 1, self.__n + 1))
+    def hf(self, p1, xi): #该函数的参数为两个向量，参数向量pi和变量向量xi
+        x = np.dot(np.transpose(p1), xi)
+        return 1.0 / (1 + math.exp(x))
 
-#需要定义假设函数,该函数估计参数选定时，输入被预测为1的概率，输出应为一个概率值,为泊松分布,牛顿法需要黑塞矩阵
-def hf(p1, xi): #该函数的参数为两个向量，参数向量pi和变量向量xi
-    x = np.dot(np.transpose(p1), xi)
-    return 1.0 / (1 + math.exp(x))
+        
+    def str_data(self, s):
+        s = s.replace('\t', ' ')
+        list_s = s.split()
+        list_dm = np.zeros((1, self.__n + 2))
+        for i in range(0, self.__n + 2):
+            list_dm[0][i] = float(list_s[i])
+        return list_dm
 
-ti = 0
+    def data_solve(self):
+        fp = open("../data/ex0.txt", "r")
+        while 1:
+            s = fp.readline()
+            if len(s) == 0:
+                break
+            t1 = self.str_data(s)
+            self.__learn_X[self.__learn_m] = t1[0][0 : self.__n + 1]
+            self.__learn_Y[self.__learn_m] = t1[0][self.__n  + 1:]
+            self.__learn_m += 1
+        fp.close()
+        self.__pre_m = int(0.2 * self.__learn_m)    #20%的数据用来预测
+        self.__learn_m -= self.__pre_m              #余下的数据用来训练
+        for i in range(0, self.__pre_m):            #得到预测数据
+            self.__pre_X[i] = self.__learn_X[self.__learn_m + i]
+            self.__right_Y[i] = self.__learn_Y[self.__learn_m + i]
 
-H = np.zeros(2, 2)
-"""
-#批量梯度下降算法
-while 1:
-    #print (su)
-    ti += 1
-    if ti > 300:
-        break
-    su = 0.0
-    for i in range(0, num):
-        t1 = 0.0
-        t1 -= p[0] * list_d[i][0]
-        t1 -= p[1] * list_d[i][1]
-        t1 = hf(t1)
-        t1 += list_d[i][2]
-        #print (t1)
-        pnew[0] += (a * t1 * list_d[i][0])
-        pnew[1] += (a * t1 * list_d[i][1])
-    #print (pnew)
-    for i in range(0, 2):
-        p[i] = pnew[i]
+    def gradient_descent(self):     #梯度下降算法
+        while 1:
+            self.__ti += 1
+            if self.__ti > 300:
+                break
+            self.__the_new = self.__the
+            for i in range(0, self.__learn_m):
+                t1 = 0.0
+                t1 -= np.dot(self.__learn_X[i], self.__the)
+                t1 = hf(t1)
+                t1 += self.__learn_Y[i][0]
+                tx = np.transpose(np.array([self.__learn_X[i]]))  #这里矩阵的每一行只是一个列表或一维数组，不是一个矩阵
+                self.__the_new += self.__a * t1 * tx
+            self.__the = self.__the_new
+        return self.__the
 
-"""
+    def rand_gradient_descent(self): #随机梯度下降
+        while 1:
+            self.__ti += 1
+            if self.__ti > 500:
+                break
+            for i in range(0, self.__learn_m):
+                t1 = 0.0
+                t1 -= np.dot(self.__learn_X[i], self.__the)
+                t1 = hf(t1)
+                t1 += self.__learn_Y[i][0]
+                tx = np.transpose(np.array([self.__learn_X[i]]))  #这里矩阵的每一行只是一个列表或一维数组，不是一个矩阵
+                self.__the += self.__a* t1 * tx
+        return self.__the
 
-#牛顿迭代法,快速求0点
-while 1:
-    #print (su)
-    ti += 1
-    if ti > 300:
-        break
-    su = 0.0
-    #求出一阶导和二阶导
-    d2 = np.zeros(2, 2) #二阶偏导矩阵
-    d1 = np.zeros(2, 1) #一阶偏导矩阵
-    for i in range(0, num):
-        xi = np.transpose(np.array(list_d[i][0], list_d[i][1]))
-        d1 = d1 + np.dot((hf(p, xi) - list_d[i][2]), xi)
-        d2 = d2 + np.dopt(np.dot(hf(p, xi)(1 - hf(p, xi)), xi), np.transpose(xi))
+    def netwon(self):
+        while 1:
+            self.__ti += 1
+            if self.__ti > 300:
+                break
+            #求出一阶导和二阶导
+            self.__d1 = np.zeros((self.__n + 1, 1))
+            self.__d2 = np.zeros((self.__n + 1, self.__n + 1))
+            for i in range(0, self.__learn_m):
+                xi = np.transpose(np.array([self.__learn_X[i]]))
+                self.__d1 = self.__d1 + np.dot((hf(self.__the, xi) - self.__learn_Y[i]), xi)
+                self.__d2 = self.__d2 + np.dopt(np.dot(hf(self.__the, xi)(1 - hf(self.__the, xi)), xi), np.transpose(xi))
+            self.__the = self.__the - np.dot(np.linalg.inv(self.__d2), self.__d1)
 
-    p = p - np.dot(np.linalg.inv(d2), d1)
-    #print (pnew)
+    
+    def predict(self, tx):
+        print (np.dot(tx, self.__the))
 
-#得到参数值之后，将其带入方程，根据需要预测的数据输出概率,这里不再赘述
+liner = liner_reg(1)
 
-print (p)
+liner.data_solve()
+#print (liner.gradient_descent())
+print (liner.rand_gradient_descent())
+#print (liner.resolution())
