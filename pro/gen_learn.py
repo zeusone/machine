@@ -3,9 +3,10 @@
 import numpy as np
 import math
 def gen_learn:
-    __m = 500
+    __m = 500   #仅仅是为了方便,把数据行数设为500,可根据实际情况调节
     __learn_Y = np.zeros((__m, 1))
     __pre_Y = np.zeros((__m, 1))
+    __pro_1 = 0 #P(y=1)的值，即伯努利分布的参数
 
     def __init__(self, n):
         self.__n = n
@@ -33,6 +34,8 @@ def gen_learn:
         for i in range(0, self.__m):
             self.__u[self.__learn_Y[i]] += self.__learn_X[i]
             self.__num[self.__learn_Y[i]] += 1
+            sel.__pro_1 += sle.__learn_Y[i]
+        self.__pro_1 = 1.0 * self.__pro_1 / self.__m
         for i in range(0, 2):
             if self.__num[i] != 0:
                 self.__u[i] /= self.__num[i]
@@ -44,6 +47,7 @@ def gen_learn:
         self.__covar /= self.__m
         #这里非常有可能因为矩阵运算的原因跑不通，由于向量和矩阵不同造成的,但是由于没有数据只能先这样了
 
+    #max(P(y=0) * P(x|y=0), P(y=1) * P(x|y = 1))
     def predict(self, x):
-        ans = math.max(pro_mul_dum_gauss(x, self.__u[0], self.__covar, self.__n + 1), pro_mul_dim_gauss(x, self.__u[1], self.__covar, self.__n + 1))
+        ans = math.max((1 - self.__pro_1) * pro_mul_dum_gauss(x, self.__u[0], self.__covar, self.__n + 1), self.__pro_1 * pro_mul_dim_gauss(x, self.__u[1], self.__covar, self.__n + 1))
         return ans
