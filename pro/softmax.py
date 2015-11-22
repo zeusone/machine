@@ -112,16 +112,6 @@ class softmax:
 
 
 
-#数据的读入处理
-
-
-
-
-
-#参数矩阵
-#导数矩阵
-#开始进行预测
-
 soft = softmax(4, 3)
 soft.file_in()
 soft.gradient_descent()
