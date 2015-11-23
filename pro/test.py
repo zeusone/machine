@@ -22,8 +22,8 @@
 #    else:
 #        print (ind)
 
-#tuple_1 = ('shanghai', 'beijing')
-#tuple_2 = ('nanjing', 'wuhan', 'xiamen')
+tuple_1 = ('shanghai', 'beijing')
+tuple_2 = ('nanjing', 'wuhan', 'xiamen')
 
 #tuple_3 = (tuple_1, tuple_2)
 
