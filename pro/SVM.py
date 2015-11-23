@@ -2,6 +2,7 @@
 #本程序依然适用wdbc数据进行预测
 #created by zeus
 #根据斯坦福大学机器学习公开课为标准编写代码，由于SVM过程较为复杂，参考了网上的一些博客和实现
+#该代码和最早的论文所使用的公式在参数b上有符号差别
 
 import numpy as np
 import math
