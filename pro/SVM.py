@@ -7,7 +7,7 @@ import numpy as np
 import math
 import random
 
-eps = 0.0001
+eps = 0.001
 class SVM:
     __m = 500 #这里一样假设有最多500个训练数据，可以自己调整
     __learn_Y = np.zeros((__m, 1))
@@ -59,11 +59,6 @@ class SVM:
             self.__pre_m += 1
         fp.close()
 
-    def com_e(self):
-        for i in range(0, self.__m):
-            self.__E[i][0] = self.__b
-            self.__E[i][0] -= self.__learn_Y[i][0]
-
     def pre_pro(self):  #首先预处理出所有的kernel[i][j]以方便以后的取用
         for i in range(0, self.__m):
             for j in range(0, self.__m):
@@ -71,11 +66,12 @@ class SVM:
                 t2 = np.transpose(np.array([self.__learn_X[j]]))
                 self.__K[i][j] = self.kernel(t1, t2)
 
-    def g(self, x):
-        if x >= 0:
-            return 1
-        else:
-            return -1
+    def com_e(self):        #计算E,是为选取合适的点
+        for i in range(0, self.__m):
+            self.__E[i][0] = self.__b
+            self.__E[i][0] -= self.__learn_Y[i][0]
+            for j in range(0, self.__m):
+                self.__E[i][0]  += self.__a[i][0] * self.__learn_Y[i][0] * self.__K[i][j]
 
     #该方法要对i1和i2进行优化
     def takeStep(self, i1, i2): #这里是按照论文里的伪代码进行的命名, 并且一定要注意是先选取的i2再选取i1
@@ -84,20 +80,17 @@ class SVM:
         y1 = self.__learn_Y[i1][0]
         y2 = self.__learn_Y[i2][0]
         s = y1 * y2
-        c = self.__c
         E1 = self.__E[i1][0]
         E2 = self.__E[i2][0]
-        #print (E1, E2)
         L = 0.0
         H = 0.0
+        c = self.__c
         if y1 == y2:
             L = max(0, alph1 + alph2 - c)
             H = min(c, alph1 + alph2)
         else:
             L = max(0, alph2 - alph1)
             H = min(c, c + alph2 - alph1)
-        if L == H:
-            return 0
         k11 = self.__K[i1][i1]
         k12 = self.__K[i1][i2]
         k22 = self.__K[i2][i2]
@@ -126,23 +119,18 @@ class SVM:
         b1 = self.__b - E1 - y1 * (a1 - alph1) * k11 - y2 * (a2 - alph2) * k12
         b2 = self.__b - E2 - y1 * (a1 - alph1) * k12 - y2 * (a2 - alph2) * k22
 
-        bold = self.__b
         if a1 > 0 and a1 < c:
             self.__b = b1
         elif a2 > 0 and a2 < c:
             self.__b = b2
         else:
             self.__b = (b1 + b2) / 2.0
-        db = self.__b - bold
-        t1 = y1 * (a1 - alph1)
-        t2 = y2 * (a2 - alph2)
-        for i in range(0, self.__m):
-            self.__E[i][0] += t1 * self.__K[i1][i] + t2 * self.__K[i2][i] + db
 
         self.__E[i1][0] = 0.0
         self.__E[i2][0] = 0.0
         self.__a[i1][0] = a1
         self.__a[i2][0] = a2
+        self.com_e()
         return 1
 
     def examinExample(self, i2):
@@ -158,7 +146,7 @@ class SVM:
             for i in range(0, self.__m):
                 if i == i2:
                     continue
-                if abs(self.__E[i][0] - E2) > ma:
+                if abs(self.__E[i] - E2) > ma:
                     i1 = i
                     ma = abs(self.__E[i] - E2) 
                 if i1 != -1 and self.takeStep(i1, i2) == 1 :
@@ -189,9 +177,7 @@ class SVM:
         ti = 0
         while numchanged > 0 or examineall == 1 :
             numchanged = 0
-            if ti % 10 == 0:
-                self.predict()
-            if ti == 150:
+            if ti == 20:
                 break
             ti += 1
             if examineall == 1:
@@ -204,22 +190,9 @@ class SVM:
             if examineall == 1 :
                  examineall = 0
             elif numchanged == 0 :
-                examineall = 1
-            for i in range(0, self.__m):
-                if self.__a[i][0] < 1e-6:
-                    self.__a[i][0] = 0.0
+                examineall == 1
+            print (numchanged)
 
-    def predict(self):
-        num = 0
-        for i in range(0, self.__m):
-            t1 = np.transpose(np.array([self.__learn_X[i]]))
-            self.__w += self.__a[i] * self.__learn_Y[i][0] * t1
-        for i in range(0, self.__pre_m):
-            t1 = np.array([self.__pre_X[i]])
-            ans = np.dot(t1, self.__w) + self.__b
-            if self.g(ans) == self.__pre_right[i][0]:
-                num += 1
-        print (num)
 
-gen = SVM(30, 0.01, 1)
+gen = SVM(30, 0.0001, 10)
 gen.smo()
