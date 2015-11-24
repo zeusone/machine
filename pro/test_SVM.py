@@ -6,10 +6,11 @@
 import numpy as np
 import math
 import random
+import matplotlib.pyplot as plt
 
 eps = 0.0001
 class SVM:
-    __m = 500 #这里一样假设有最多500个训练数据，可以自己调整
+    __m = 400 #这里一样假设有最多500个训练数据，可以自己调整
     __learn_Y = np.zeros((__m, 1))
     __pre_Y = np.zeros((__m, 1))
     __pre_right = np.zeros((__m, 1))
@@ -31,18 +32,17 @@ class SVM:
         return np.dot(np.transpose(xi), xj)
 
     def ori_data(self, s):
-        fdict = {'B': -1, 'M': 1}
-        list_s = s.split(',')
+        list_s = s.split()
         list_d = [0] *( self.__n + 1)
         for i in range(0, self.__n):
-            list_d[i] = float(list_s[i + 2])
-        list_d[self.__n] = fdict[list_s[1]]
+            list_d[i] = int(list_s[i])
+        list_d[self.__n] = int(list_s[self.__n])
         return list_d
 
 
     def file_in(self):
-        fp = open("../data/wdbc.data")
-        for i in range(0, self.__m):    #前500作为训练数据
+        fp = open("svm.train_new", "r")
+        for i in range(0, self.__m):    #前m行作为训练数据
             s = fp.readline() 
             s = s.strip('\n')
             list_d = self.ori_data(s)
@@ -76,6 +76,37 @@ class SVM:
             return 1
         else:
             return -1
+    def draw(self):
+        plt.xlabel(u"x1")
+        plt.xlim(0, 100)
+        plt.ylabel(u"x2")
+        plt.ylim(0, 100)
+        plt.title("SVM - %s, tolerance %f, C %f" % ("svm.train_new", self.__tol, self.__c))
+        for i in range(0, self.__pre_m):
+            if self.__pre_right[i][0] == 1:
+                plt.plot(self.__pre_X[i][0], self.__pre_X[i][1], 'or')
+            else:
+                plt.plot(self.__pre_X[i][0], self.__pre_X[i][1], 'og')
+
+        w1 = 0.0
+        w2 = 0.0
+        w = - self.__w[0][0] / self.__w[1][0]
+
+        b = - self.__b / self.__w[1][0]
+        r = 1 / self.__w[1][0]
+
+        lp_x1 = [10, 90]
+        lp_x2 = []
+        lp_x2up = []
+        lp_x2down = []
+        for x1 in lp_x1:
+            lp_x2.append(w * x1 + b)
+            lp_x2up.append(w * x1 + b + r)
+            lp_x2down.append(w * x1 + b - r)
+        plt.plot(lp_x1, lp_x2, 'b')
+        plt.plot(lp_x1, lp_x2up, 'b--')
+        plt.plot(lp_x1, lp_x2down, 'b--')
+        plt.show()
 
     #该方法要对i1和i2进行优化
     def takeStep(self, i1, i2): #这里是按照论文里的伪代码进行的命名, 并且一定要注意是先选取的i2再选取i1
@@ -191,7 +222,7 @@ class SVM:
             numchanged = 0
             if ti % 10 == 0:
                 self.predict()
-            if ti == 50:
+            if ti == 100:
                 break
             ti += 1
             if examineall == 1:
@@ -215,6 +246,7 @@ class SVM:
         for i in range(0, self.__m):
             t1 = np.transpose(np.array([self.__learn_X[i]]))
             self.__w += self.__a[i] * self.__learn_Y[i][0] * t1
+        #self.draw()
         for i in range(0, self.__pre_m):
             t1 = np.array([self.__pre_X[i]])
             ans = np.dot(t1, self.__w) + self.__b
@@ -222,5 +254,5 @@ class SVM:
                 num += 1
         print (num)
 
-gen = SVM(30, 0.001, 5)
+gen = SVM(2, 0.01, 5)
 gen.smo()
